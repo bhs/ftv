@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Microbenchmarks</title>
+    <script type="text/javascript" src="../ftv.js"></script>
+  </head>
+  <body>
+    Running benchmark:
+    <script type="text/javascript">
+      var N = 10000000;
+      var SOURCE_ARRAY = [];
+      SOURCE_ARRAY.length = N;
+      for (var i = 0; i < N; ++i) {
+        SOURCE_ARRAY[i] = 4 + i * ((i % 2) - 1);
+      }
+
+      // A plain-old for loop over the SOURCE_ARRAY.
+      var forLoop = function() {
+        var s = 0;
+        var before = new Date();
+        for (var i = 0; i < N; ++i) {
+          s += SOURCE_ARRAY[i];
+        }
+        var after = new Date();
+        return (after.getTime() - before.getTime());
+      };
+
+      // A simple iterator prototype.
+      var Iterator = function() {
+        this.pos = 0;
+        this.limit = N;
+      }
+      Iterator.prototype.done = function() {
+        return this.pos >= this.limit;
+      }
+      Iterator.prototype.current = function() {
+        return SOURCE_ARRAY[this.pos];
+      }
+      Iterator.prototype.next = function() {
+        this.pos += 1;
+      }
+      var iteratorLoop = function() {
+        var s = 0;
+        var before = new Date();
+        var i = new Iterator();
+        for (var i = new Iterator(); !i.done(); i.next()) {
+          s += i.current();
+        }
+        var after = new Date();
+        return (after.getTime() - before.getTime());
+      };
+
+      // A callback-based iterator-like prototype.
+      var CallbackObject = function() {
+      }
+      CallbackObject.prototype.each = function(cb) {
+        var before = new Date();
+        for (var i = 0; i < N; ++i) {
+          cb(SOURCE_ARRAY[i]);
+        }
+        var after = new Date();
+        return (after.getTime() - before.getTime());
+      }
+
+      // The actual 
+      for_timings = []
+      iter_timings = []
+      cb_timings = []
+      for (var trial = 0; trial < 10; ++trial) {
+        console.log(trial);
+        for_timings[trial] = forLoop();
+        iter_timings[trial] = iteratorLoop();
+        {
+          var s = 0;
+          var cbo = new CallbackObject();
+          cb_timings[trial] = cbo.each(function(e) {
+              s += e;
+              });
+        }
+      }
+      document.write("<hr/>");
+      document.write("For loop timings (ms): " + for_timings + "<br/>");
+      document.write("Iter loop timings (ms): " + iter_timings + "<br/>");
+      document.write("Callback loop timings (ms): " + cb_timings + "<br/>");
+    </script>
+  </body>
+</html>

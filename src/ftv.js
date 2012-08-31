@@ -5,8 +5,8 @@
  */
 
 var FTV = function(canvas_name, data, options) {
-  c = document.getElementById(canvas_name);
-  ctx = c.getContext('2d');
+  this.canvas = document.getElementById(canvas_name);
+  ctx = this.canvas.getContext('2d');
   ctx.lineWidth = 1;
   ctx.beginPath();
   for (var i = 0; i <= 200; i += 10) {
@@ -15,9 +15,19 @@ var FTV = function(canvas_name, data, options) {
   ctx.stroke();
 };
 
-FTV.NAME = "FTV";
-FTV.VERSION = "0.1";
+FTV.prototype.NAME = "FTV";
+FTV.prototype.VERSION = "0.1";
 
-FTV.toString = function() {
+FTV.prototype.toString = function() {
   return "<" + this.NAME + " " + this.VERSION + ">";
 };
+
+FTV.prototype.width = function() {
+  return this.canvas.width;
+};
+
+FTV.prototype.height = function() {
+  return this.canvas.height;
+};
+
+
