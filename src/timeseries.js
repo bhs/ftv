@@ -61,10 +61,9 @@ var TimeseriesPointIterator = function(ts, startTime, endTime) {
   this.pos = 0;
   if (this.startTime) {
     while (this.pos < this.timestamps.length &&
-           this.timestamps[this.pos] > startTime) {
+           this.timestamps[this.pos] < startTime) {
       ++this.pos;
     }
-    console.log(this.pos);
   }
 };
 

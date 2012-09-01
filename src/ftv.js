@@ -102,7 +102,7 @@ FTV.prototype.registerHandlers_ = function() {
 FTV.prototype.clearPreviousOverlay_ = function() {
   if (this.mouseOverX != null) {
     this.ctx.putImageData(
-        this.baseImage, 0, 0, this.mouseOverX - 1, 0, 2, this.height());
+        this.baseImage, 0, 0, this.mouseOverX - 4, 0, 8, this.height());
   }
   this.mouseOverX = null;
 };
@@ -113,13 +113,15 @@ FTV.prototype.mouseOut_ = function(evt) {
 
 FTV.prototype.mouseMove_ = function(evt) {
   this.clearPreviousOverlay_();
-  this.ctx.strokeWidth = 1;
-  this.ctx.strokeStyle = "rgb(128, 128, 128)";
-  this.ctx.beginPath();
+
   this.mouseOverX = evt.offsetX;
-  this.ctx.moveTo(this.mouseOverX, 0);
-  this.ctx.lineTo(this.mouseOverX, this.height());
-  this.ctx.stroke();
+  // TODO: reuse this code for non-focused graphs.
+  // this.ctx.strokeWidth = 1;
+  // this.ctx.strokeStyle = "rgb(128, 128, 128)";
+  // this.ctx.beginPath();
+  // this.ctx.moveTo(this.mouseOverX, 0);
+  // this.ctx.lineTo(this.mouseOverX, this.height());
+  // this.ctx.stroke();
 
   var scale = [
       this.width() / (this.timeRange[1] - this.timeRange[0]),
