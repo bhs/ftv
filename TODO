@@ -1,7 +1,9 @@
 x- benchmark trivial array iteration vs generators
-- first stab at Timeseries prototype
-- plot multiple Timeseries prototypes with their own timestamp sequences
-- add a color attribute
+x- first stab at Timeseries prototype
+x- plot multiple Timeseries prototypes with their own timestamp sequences
+x- add a color attribute
+x- add basic mouseover interaction, keeping track of background
 - add mouseover vis
 - add selection interactivity
 - polish and rethink
+- figure out imports, write an assert function

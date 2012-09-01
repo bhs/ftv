@@ -29,8 +29,8 @@ var Timeseries = function(name, timestamps, values) {
   }
 };
 
-Timeseries.prototype.getPointIterator = function() {
-  return new TimeseriesPointIterator(this);
+Timeseries.prototype.getPointIterator = function(startTime, endTime) {
+  return new TimeseriesPointIterator(this, startTime, endTime);
 };
 
 Timeseries.prototype.toString = function() {
@@ -41,6 +41,10 @@ Timeseries.prototype.setColor = function(col) {
   this.color = col;
 };
 
+Timeseries.prototype.getColor = function() {
+  return this.color;
+};
+
 Timeseries.prototype.getTimeRange = function() {
   return this.timeRange;
 };
@@ -49,10 +53,19 @@ Timeseries.prototype.getValueRange = function() {
   return this.valueRange;
 };
 
-var TimeseriesPointIterator = function(ts) {
+var TimeseriesPointIterator = function(ts, startTime, endTime) {
   this.timestamps = ts.timestamps;
   this.values = ts.values;
+  this.startTime = startTime;
+  this.endTime = endTime;
   this.pos = 0;
+  if (this.startTime) {
+    while (this.pos < this.timestamps.length &&
+           this.timestamps[this.pos] > startTime) {
+      ++this.pos;
+    }
+    console.log(this.pos);
+  }
 };
 
 TimeseriesPointIterator.prototype.value = function() {
@@ -73,7 +86,12 @@ TimeseriesPointIterator.prototype.next = function() {
 
 TimeseriesPointIterator.prototype.done = function() {
   // FIXME: write an assert function and figure out imports.
-  return this.pos >= this.timestamps.length;
+  if (this.endTime == null) {
+    return this.pos >= this.timestamps.length;
+  } else {
+    return (this.pos >= this.timestamps.length ||
+            this.timestamps[this.pos] >= this.endTime);
+  }
 };
 
 
@@ -116,7 +134,6 @@ TimeseriesSet.prototype.computeRanges_ = function() {
 };
 
 TimeseriesSet.prototype.getTimeRange = function() {
-  console.log(this.timeRange);
   return this.timeRange;
 };
 

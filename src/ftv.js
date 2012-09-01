@@ -9,11 +9,18 @@
 var FTV = function(canvas_name) {
   this.ts_sets = [];
   this.canvas = document.getElementById(canvas_name);
+  this.ctx = this.canvas.getContext("2d");
 };
 
 FTV.prototype.addTimeseriesSet = function(ts_set) {
   this.ts_sets[this.ts_sets.length] = ts_set;
   this.computeTimeRange_();
+};
+
+FTV.prototype.start = function() {
+  this.draw();
+  this.baseImage = this.ctx.getImageData(0, 0, this.width(), this.height());
+  this.registerHandlers_();
 };
 
 /** @private */
@@ -31,7 +38,6 @@ FTV.prototype.computeTimeRange_ = function() {
 // Rendering:
 
 FTV.prototype.draw = function() {
-  ctx = this.canvas.getContext("2d");
   // The value (as opposed to time) scale and translation is ts_set-specific.
   var scale = [
       this.width() / (this.timeRange[1] - this.timeRange[0]),
@@ -49,29 +55,102 @@ FTV.prototype.draw = function() {
     translation[1] = ts_set.getValueRange()[1];
 
     for (var t = 0; t < ts_set.size(); ++t) {
-      // TODO: use the color, style, etc of the line.
       // TODO: experiment with Path objects for cleanliness and performance.
-      ctx.beginPath();
-      var last_point_valid = false;
-      for (var point_iter = ts_set.timeseries(t).getPointIterator();
-           !point_iter.done();
-           point_iter.next()) {
-        if (!point_iter.valid()) {
-          last_point_valid = false;
+      var ts = ts_set.timeseries(t);
+      // TODO: other visual properties
+      this.ctx.strokeStyle = ts.getColor();
+      this.ctx.beginPath();
+      var lastPointValid = false;
+      for (var pointIter = ts.getPointIterator();
+           !pointIter.done();
+           pointIter.next()) {
+        if (!pointIter.valid()) {
+          lastPointValid = false;
           continue;
         }
-        last_point_valid = true;
-        var x = (point_iter.time() - translation[0]) * scale[0];
-        var y = (point_iter.value() - translation[1]) * scale[1];
-        if (!last_point_valid) {
-          // START HERE: figure out why we're drawing through the gaps.
-          ctx.stroke();
-          ctx.moveTo(x, y);
+        var x = (pointIter.time() - translation[0]) * scale[0];
+        var y = (pointIter.value() - translation[1]) * scale[1];
+        if (!lastPointValid) {
+          this.ctx.moveTo(x, y);
         } else {
-          ctx.lineTo(x, y);
+          this.ctx.lineTo(x, y);
         }
+        lastPointValid = true;
       }
-      ctx.stroke();
+      this.ctx.stroke();
+    }
+  }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+// Event handling:
+FTV.prototype.registerHandlers_ = function() {
+  this.mouseOverX = null;
+  this.canvas._ftv = this;
+  this.canvas.addEventListener(
+      "mousemove", function(evt) {
+          evt.srcElement._ftv.mouseMove_(evt);
+      },
+      false);
+  this.canvas.addEventListener(
+      "mouseout", function(evt) {
+          evt.srcElement._ftv.mouseOut_(evt);
+      },
+      false);
+};
+
+FTV.prototype.clearPreviousOverlay_ = function() {
+  if (this.mouseOverX != null) {
+    this.ctx.putImageData(
+        this.baseImage, 0, 0, this.mouseOverX - 1, 0, 2, this.height());
+  }
+  this.mouseOverX = null;
+};
+
+FTV.prototype.mouseOut_ = function(evt) {
+  this.clearPreviousOverlay_();
+};
+
+FTV.prototype.mouseMove_ = function(evt) {
+  this.clearPreviousOverlay_();
+  this.ctx.strokeWidth = 1;
+  this.ctx.strokeStyle = "rgb(128, 128, 128)";
+  this.ctx.beginPath();
+  this.mouseOverX = evt.offsetX;
+  this.ctx.moveTo(this.mouseOverX, 0);
+  this.ctx.lineTo(this.mouseOverX, this.height());
+  this.ctx.stroke();
+
+  var scale = [
+      this.width() / (this.timeRange[1] - this.timeRange[0]),
+      null];
+  var translation = [
+      this.timeRange[0],
+      null];
+  var startTime = ((this.mouseOverX - 1) / scale[0]) + translation[0];
+  var endTime = ((this.mouseOverX + 1) / scale[0]) + translation[0];
+  for (var s = 0; s < this.ts_sets.length; ++s) {
+    var ts_set = this.ts_sets[s];
+
+    // Note that these transform higher values to have lower y coordinates, as
+    // a user would expect.
+    scale[1] = this.height() / (
+        ts_set.getValueRange()[0] - ts_set.getValueRange()[1]);
+    translation[1] = ts_set.getValueRange()[1];
+
+    for (var t = 0; t < ts_set.size(); ++t) {
+      // TODO: experiment with Path objects for cleanliness and performance.
+      var ts = ts_set.timeseries(t);
+      // TODO: other visual properties
+      var pointIter = ts.getPointIterator(startTime, endTime);
+      if (!pointIter.done()) {
+        var x = (pointIter.time() - translation[0]) * scale[0];
+        var y = (pointIter.value() - translation[1]) * scale[1];
+        this.ctx.strokeStyle = ts.getColor();
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, 2, 0, Math.PI * 2, true);
+        this.ctx.stroke();
+      }
     }
   }
 };
