@@ -5,7 +5,7 @@
     <script type="text/javascript" src="../ftv.js"></script>
   </head>
   <body>
-    Running benchmark:
+    Running iteration benchmark:
     <script type="text/javascript">
       var N = 10000000;
       var SOURCE_ARRAY = [];
@@ -62,7 +62,7 @@
         return (after.getTime() - before.getTime());
       }
 
-      // The actual 
+      // The actual costs-per-run.
       for_timings = []
       iter_timings = []
       cb_timings = []
@@ -82,6 +82,64 @@
       document.write("For loop timings (ms): " + for_timings + "<br/>");
       document.write("Iter loop timings (ms): " + iter_timings + "<br/>");
       document.write("Callback loop timings (ms): " + cb_timings + "<br/>");
+    </script>
+
+    <hr/>
+    Running canvas scaling benchmark:<br/>
+    <canvas id="host_canvas" width="200" height="400"></canvas>
+    <script type="text/javascript">
+      canvas = document.getElementById("host_canvas");
+      POINTS = []
+      for (var i = 0; i < 200; ++i) {
+        var x = Math.PI * ((i / 100) - 1);
+        POINTS[i] = [i / 200, (Math.sin(x) + 1) / 2];
+      }
+
+      var hardwareScaleAndTranslate = function(ctx, points, scale, dy, n) {
+        var before = new Date();
+        for (var k = 0; k < n; ++k) {
+          ctx.setTransform(scale, 0, 0, scale, 0, dy);
+          ctx.lineWidth = 1 / scale;
+          ctx.moveTo(points[0][0], points[0][1]);
+          ctx.beginPath();
+          for (var i = 1; i < points.length; ++i) {
+            ctx.lineTo(points[i][0], points[i][1]);
+          }
+          ctx.stroke();
+        }
+        var after = new Date();
+        return (after.getTime() - before.getTime());
+      };
+
+      var softwareScaleAndTranslate = function(ctx, points, scale, dy, n) {
+        var before = new Date();
+        for (var k = 0; k < n; ++k) {
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.lineWidth = 1;
+          ctx.moveTo(scale * points[0][0], dy + scale * points[0][1]);
+          ctx.beginPath();
+          for (var i = 1; i < points.length; ++i) {
+            ctx.lineTo(scale * points[i][0], dy + scale * points[i][1]);
+          }
+          ctx.stroke();
+        }
+        var after = new Date();
+        return (after.getTime() - before.getTime());
+      };
+
+      // The actual costs-per-run.
+      hw_timings = []
+      sw_timings = []
+      for (var trial = 0; trial < 10; ++trial) {
+        ctx = canvas.getContext("2d");
+        hw_timings[trial] = hardwareScaleAndTranslate(
+            ctx, POINTS, 200, 1, 1000);
+        sw_timings[trial] = softwareScaleAndTranslate(
+            ctx, POINTS, 200, 200, 1000);
+      }
+      document.write("<hr/>");
+      document.write("hw timings (ms): " + hw_timings + "<br/>");
+      document.write("sw timings (ms): " + sw_timings + "<br/>");
     </script>
   </body>
 </html>

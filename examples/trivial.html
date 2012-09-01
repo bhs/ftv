@@ -3,11 +3,34 @@
   <head>
     <title>A Trivial Example</title>
     <script type="text/javascript" src="../src/ftv.js"></script>
+    <script type="text/javascript" src="../src/timeseries.js"></script>
   </head>
   <body>
-    <canvas id="host_canvas" width="200" height="200"></canvas>
+    <canvas id="host_canvas" width="400" height="200"></canvas>
     <script type="text/javascript">
-      new FTV("host_canvas", null, null);
+      var now = (new Date()).getTime();
+      var K = 15;
+      var N = 400;
+      var ts_array = [];
+      for (var t = 0; t < K; ++t) {
+        var timestamps = [];
+        var values = [];
+        for (var i = 0; i <= N; i += 1) {
+          timestamps[i] = now + (i * 1000);
+          if ((i + 5) % 100 < 30) {
+            values[i] = null;
+          } else {
+            values[i] = Math.sin(Math.PI * 2 * (t * 5 + i) / N);
+          }
+        }
+        console.log(values);
+        ts_array[ts_array.length] =
+            new Timeseries("my series", timestamps, values);
+      }
+      ftv = new FTV("host_canvas");
+      ftv.addTimeseriesSet(new TimeseriesSet(ts_array, "unitless"));
+      ftv.draw();
+
     </script>
   </body>
 </html>
