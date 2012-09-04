@@ -145,7 +145,7 @@ FTV.prototype.mouseMove_ = function(evt) {
       var ts = ts_set.timeseries(t);
       // TODO: other visual properties
       var pointIter = ts.getPointIterator(startTime, endTime);
-      if (!pointIter.done()) {
+      if (!pointIter.done() && pointIter.valid()) {
         var x = (pointIter.time() - translation[0]) * scale[0];
         var y = (pointIter.value() - translation[1]) * scale[1];
         this.ctx.strokeStyle = ts.getColor();

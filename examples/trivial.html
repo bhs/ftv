@@ -6,11 +6,11 @@
     <script type="text/javascript" src="../src/timeseries.js"></script>
   </head>
   <body>
-    <canvas id="host_canvas" width="400" height="200"></canvas>
+    <canvas id="host_canvas" width="800" height="400"></canvas>
     <script type="text/javascript">
       var now = (new Date()).getTime();
-      var K = 50;
-      var N = 400;
+      var K = 100;
+      var N = 1000;
       var ts_array = [];
       for (var t = 0; t < K; ++t) {
         var timestamps = [];
@@ -27,9 +27,9 @@
         }
         ts = new Timeseries("my series", timestamps, values);
         ts.setColor("rgb(" +
-                    Math.floor(Math.random() * 128 + 64) + ", " +
-                    Math.floor(Math.random() * 128 + 64) + ", " +
-                    Math.floor(Math.random() * 128 + 64) + ")");
+                    Math.floor(Math.random() * 192 + 64) + ", " +
+                    Math.floor(Math.random() * 192 + 64) + ", " +
+                    Math.floor(Math.random() * 192 + 64) + ")");
         ts_array[ts_array.length] = ts;
       }
       ftv = new FTV("host_canvas");
