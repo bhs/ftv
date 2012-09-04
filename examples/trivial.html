@@ -6,35 +6,52 @@
     <script type="text/javascript" src="../src/timeseries.js"></script>
   </head>
   <body>
-    <canvas id="host_canvas" width="800" height="400"></canvas>
+    All series have 400 points. The following graphs have 1, 10, 100, 500, and
+    1000 series respectively.<br/><hr/>
+    <canvas id="c0" width="500" height="200"></canvas>
+    <br/>
+    <canvas id="c1" width="500" height="200"></canvas>
+    <br/>
+    <canvas id="c2" width="500" height="200"></canvas>
+    <br/>
+    <canvas id="c3" width="500" height="200"></canvas>
+    <br/>
+    <canvas id="c4" width="500" height="200"></canvas>
+    <br/>
     <script type="text/javascript">
-      var now = (new Date()).getTime();
-      var K = 100;
-      var N = 1000;
-      var ts_array = [];
-      for (var t = 0; t < K; ++t) {
-        var timestamps = [];
-        var values = [];
-        var gappiness = 100 * Math.random();
-        var phase = 200 * Math.random();
-        for (var i = 0; i <= N; i += 1) {
-          timestamps[i] = now + (i * 1000);
-          if ((i + phase) % 100 < gappiness) {
-            values[i] = null;
-          } else {
-            values[i] = Math.sin(Math.PI * 2 * (t * 5 + i) / N);
+      var populateCanvas = function(canvasId, numSeries, numPoints) {
+        var now = (new Date()).getTime();
+        var ts_array = [];
+        for (var t = 0; t < numSeries; ++t) {
+          var timestamps = [];
+          var values = [];
+          var gappiness = 50 * Math.random();
+          var gapPhase = 200 * Math.random();
+          for (var p = 0; p <= numPoints; p += 1) {
+            timestamps[p] = now + (p * 1000);
+            if ((p + gapPhase) % 100 < gappiness) {
+              values[p] = null;
+            } else {
+              values[p] = Math.sin((p + t * 200 / numSeries) * Math.PI * 2 / numPoints);
+            }
           }
+          ts = new Timeseries("s" + t, timestamps, values);
+          ts.setColor("rgb(" +
+                      Math.floor(Math.random() * 192 + 64) + ", " +
+                      Math.floor(Math.random() * 192 + 64) + ", " +
+                      Math.floor(Math.random() * 192 + 64) + ")");
+          ts_array[ts_array.length] = ts;
         }
-        ts = new Timeseries("my series", timestamps, values);
-        ts.setColor("rgb(" +
-                    Math.floor(Math.random() * 192 + 64) + ", " +
-                    Math.floor(Math.random() * 192 + 64) + ", " +
-                    Math.floor(Math.random() * 192 + 64) + ")");
-        ts_array[ts_array.length] = ts;
+        ftv = new FTV(canvasId);
+        ftv.addTimeseriesSet(new TimeseriesSet(ts_array, "unitless"));
+        ftv.start();
       }
-      ftv = new FTV("host_canvas");
-      ftv.addTimeseriesSet(new TimeseriesSet(ts_array, "unitless"));
-      ftv.start();
+
+      populateCanvas("c0", 1, 400);
+      populateCanvas("c1", 10, 400);
+      populateCanvas("c2", 100, 400);
+      populateCanvas("c3", 500, 400);
+      populateCanvas("c4", 1000, 400);
     </script>
   </body>
 </html>
