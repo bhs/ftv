@@ -4,7 +4,19 @@
  * information.
  */
 
+var assert = function(condition, message) {
+  if (!condition) {
+    console.error("Assertion failed: " + message);
+  }
+};
+
 var Timeseries = function(name, timestamps, values) {
+  assert(timestamps.length == values.length);
+  // A way of verifying that these are Float64Arrays.
+  assert(timestamps.BYTES_PER_ELEMENT == 8,
+         "Only use Float64Arrays for Timeseries timestamps.");
+  assert(values.BYTES_PER_ELEMENT == 8,
+         "Only use Float64Arrays for Timeseries values.");
   this.name = name;
   this.timestamps = timestamps;
   this.values = values;
@@ -20,7 +32,7 @@ var Timeseries = function(name, timestamps, values) {
       this.timeRange[1] = timestamps[i];
 
     // Update value range.
-    if (values[i] != null) {
+    if (!isNaN(values[i])) {
       if (values[i] < this.valueRange[0])
         this.valueRange[0] = values[i];
       if (values[i] > this.valueRange[1])
@@ -53,6 +65,45 @@ Timeseries.prototype.getValueRange = function() {
   return this.valueRange;
 };
 
+Timeseries.prototype.render = function(ctx) {
+  // TODO: verify that this doesn't cost too much (the refetching and
+  // recomputation). And think about alternatives.
+  var globalTimeRange = this.ts_set.ftv.getGlobalTimeRange();
+  var valueRange = this.ts_set.getValueRange();
+
+  var scale = [
+      this.ts_set.ftv.width() / (globalTimeRange[1] - globalTimeRange[0]),
+      // Note that these transform higher values to have lower y coordinates, as
+      // an FTV user would expect.
+      ftv.height() / (
+          valueRange[0] - valueRange[1])];
+  var translation = [
+      globalTimeRange[0],
+      valueRange[1]];
+
+  // TODO: other visual properties
+  ctx.strokeStyle = this.getColor();
+  ctx.beginPath();
+  var lastPointValid = false;
+  for (var pointIter = this.getPointIterator();
+       !pointIter.done();
+       pointIter.next()) {
+    if (!pointIter.valid()) {
+      lastPointValid = false;
+      continue;
+    }
+    var x = (pointIter.time() - translation[0]) * scale[0];
+    var y = (pointIter.value() - translation[1]) * scale[1];
+    if (!lastPointValid) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+    lastPointValid = true;
+  }
+  ctx.stroke();
+};
+
 var TimeseriesPointIterator = function(ts, startTime, endTime) {
   this.timestamps = ts.timestamps;
   this.values = ts.values;
@@ -76,7 +127,7 @@ TimeseriesPointIterator.prototype.time = function() {
 };
 
 TimeseriesPointIterator.prototype.valid = function() {
-  return this.values[this.pos] != null;
+  return !isNaN(this.values[this.pos]);
 };
 
 TimeseriesPointIterator.prototype.next = function() {
@@ -100,7 +151,12 @@ TimeseriesPointIterator.prototype.done = function() {
 var TimeseriesSet = function(timeseries_array, unit_name) {
   this.name = name;
   this.ts_array = timeseries_array;
+  for (var i = 0; i < this.ts_array.length; ++i) {
+    this.ts_array[i].ts_set = this;
+  }
   this.computeRanges_();
+  // TODO: add a setter for this, maybe?
+  this.ftv = null;
 };
 
 TimeseriesSet.prototype.size = function() {
@@ -140,3 +196,14 @@ TimeseriesSet.prototype.getValueRange = function() {
   return this.valueRange;
 };
 
+TimeseriesSet.prototype.getValueRange = function() {
+  return this.valueRange;
+};
+
+TimeseriesSet.prototype.render = function(ctx) {
+  for (var t = 0; t < this.size(); ++t) {
+    // TODO: experiment with Path objects for cleanliness and performance.
+    var ts = this.timeseries(t);
+    this.timeseries(t).render(ctx, ftv);
+  }
+};

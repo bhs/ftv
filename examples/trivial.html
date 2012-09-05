@@ -23,16 +23,17 @@
         var now = (new Date()).getTime();
         var ts_array = [];
         for (var t = 0; t < numSeries; ++t) {
-          var timestamps = [];
-          var values = [];
+          var timestamps = new Float64Array(numPoints);
+          var values = new Float64Array(numPoints);
           var gappiness = 50 * Math.random();
           var gapPhase = 200 * Math.random();
           for (var p = 0; p <= numPoints; p += 1) {
             timestamps[p] = now + (p * 1000);
             if ((p + gapPhase) % 100 < gappiness) {
-              values[p] = null;
+              values[p] = NaN;
             } else {
-              values[p] = Math.sin((p + t * 200 / numSeries) * Math.PI * 2 / numPoints);
+              values[p] = Math.sin((p + t * 200 / numSeries)
+                                   * Math.PI * 2 / numPoints);
             }
           }
           ts = new Timeseries("s" + t, timestamps, values);

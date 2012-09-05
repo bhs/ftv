@@ -3,7 +3,8 @@ x- first stab at Timeseries prototype
 x- plot multiple Timeseries prototypes with their own timestamp sequences
 x- add a color attribute
 x- add basic mouseover interaction, keeping track of background
-- add mouseover vis
-- add selection interactivity
+x- add mouseover vis
+x- make Timeseries and TimeseriesSet draw themselves
+- add selection interactivity / partial redraw framework
 - polish and rethink
-- figure out imports, write an assert function
+- figure out imports

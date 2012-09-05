@@ -13,6 +13,7 @@ var FTV = function(canvas_name) {
 };
 
 FTV.prototype.addTimeseriesSet = function(ts_set) {
+  ts_set.ftv = this;
   this.ts_sets[this.ts_sets.length] = ts_set;
   this.computeTimeRange_();
 };
@@ -34,51 +35,16 @@ FTV.prototype.computeTimeRange_ = function() {
   }
 };
 
+FTV.prototype.getGlobalTimeRange = function() {
+  return this.timeRange;
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 // Rendering:
 
 FTV.prototype.draw = function() {
-  // The value (as opposed to time) scale and translation is ts_set-specific.
-  var scale = [
-      this.width() / (this.timeRange[1] - this.timeRange[0]),
-      null];
-  var translation = [
-      this.timeRange[0],
-      null];
   for (var s = 0; s < this.ts_sets.length; ++s) {
-    var ts_set = this.ts_sets[s];
-
-    // Note that these transform higher values to have lower y coordinates, as
-    // a user would expect.
-    scale[1] = this.height() / (
-        ts_set.getValueRange()[0] - ts_set.getValueRange()[1]);
-    translation[1] = ts_set.getValueRange()[1];
-
-    for (var t = 0; t < ts_set.size(); ++t) {
-      // TODO: experiment with Path objects for cleanliness and performance.
-      var ts = ts_set.timeseries(t);
-      // TODO: other visual properties
-      this.ctx.strokeStyle = ts.getColor();
-      this.ctx.beginPath();
-      var lastPointValid = false;
-      for (var pointIter = ts.getPointIterator();
-           !pointIter.done();
-           pointIter.next()) {
-        if (!pointIter.valid()) {
-          lastPointValid = false;
-          continue;
-        }
-        var x = (pointIter.time() - translation[0]) * scale[0];
-        var y = (pointIter.value() - translation[1]) * scale[1];
-        if (!lastPointValid) {
-          this.ctx.moveTo(x, y);
-        } else {
-          this.ctx.lineTo(x, y);
-        }
-        lastPointValid = true;
-      }
-      this.ctx.stroke();
-    }
+    this.ts_sets[s].render(this.ctx, this);
   }
 };
 
@@ -149,9 +115,10 @@ FTV.prototype.mouseMove_ = function(evt) {
         var x = (pointIter.time() - translation[0]) * scale[0];
         var y = (pointIter.value() - translation[1]) * scale[1];
         this.ctx.strokeStyle = ts.getColor();
+        this.ctx.fillStyle = ts.getColor();
         this.ctx.beginPath();
         this.ctx.arc(x, y, 2, 0, Math.PI * 2, true);
-        this.ctx.stroke();
+        this.ctx.fill();
       }
     }
   }
