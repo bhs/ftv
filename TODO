@@ -5,6 +5,6 @@ x- add a color attribute
 x- add basic mouseover interaction, keeping track of background
 x- add mouseover vis
 x- make Timeseries and TimeseriesSet draw themselves
-- add selection interactivity / partial redraw framework
+x- add selection interactivity / partial redraw framework
 - polish and rethink
 - figure out imports

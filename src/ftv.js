@@ -6,9 +6,14 @@
  * @fileoverview The top-level FTV file, and home of the FTV prototype.
  */
 
-var FTV = function(canvas_name) {
+var FTV = function(div_name) {
   this.ts_sets = [];
-  this.canvas = document.getElementById(canvas_name);
+  this.div = document.getElementById(div_name);
+  this.canvas = document.createElement("canvas");
+  this.canvas.width = 900;
+  this.canvas.height = 500;
+  this.div.appendChild(document.createElement("p"));
+  this.div.appendChild(this.canvas);
   this.ctx = this.canvas.getContext("2d");
 };
 
@@ -51,7 +56,7 @@ FTV.prototype.draw = function() {
 ////////////////////////////////////////////////////////////////////////////////
 // Event handling:
 FTV.prototype.registerHandlers_ = function() {
-  this.mouseOverX = null;
+  this.previousOverlayBounds = null;
   this.canvas._ftv = this;
   this.canvas.addEventListener(
       "mousemove", function(evt) {
@@ -66,28 +71,40 @@ FTV.prototype.registerHandlers_ = function() {
 };
 
 FTV.prototype.clearPreviousOverlay_ = function() {
-  if (this.mouseOverX != null) {
+  if (this.previousOverlayBounds != null) {
     this.ctx.putImageData(
-        this.baseImage, 0, 0, this.mouseOverX - 4, 0, 8, this.height());
+        this.baseImage, 0, 0,
+        this.previousOverlayBounds[0],
+        this.previousOverlayBounds[1],
+        this.previousOverlayBounds[2],
+        this.previousOverlayBounds[3]);
   }
-  this.mouseOverX = null;
+  this.previousOverlayBounds = null;
 };
 
 FTV.prototype.mouseOut_ = function(evt) {
   this.clearPreviousOverlay_();
 };
 
-FTV.prototype.mouseMove_ = function(evt) {
+FTV.prototype.replaceOverlay = function(cb) {
   this.clearPreviousOverlay_();
+  if (cb != null) {
+    var rval = cb(this.ctx);
+    if (rval)
+      this.previousOverlayBounds = rval;
+    else
+      this.previousOverlayBounds = [0, 0, this.width(), this.height()];
+  }
+};
 
-  this.mouseOverX = evt.offsetX;
+FTV.prototype.drawPoints = function(ctx) {
   // TODO: reuse this code for non-focused graphs.
-  // this.ctx.strokeWidth = 1;
-  // this.ctx.strokeStyle = "rgb(128, 128, 128)";
-  // this.ctx.beginPath();
-  // this.ctx.moveTo(this.mouseOverX, 0);
-  // this.ctx.lineTo(this.mouseOverX, this.height());
-  // this.ctx.stroke();
+  // ctx.strokeWidth = 1;
+  // ctx.strokeStyle = "rgb(128, 128, 128)";
+  // ctx.beginPath();
+  // ctx.moveTo(this.mouseOverX, 0);
+  // ctx.lineTo(this.mouseOverX, this.height());
+  // ctx.stroke();
 
   var scale = [
       this.width() / (this.timeRange[1] - this.timeRange[0]),
@@ -97,6 +114,8 @@ FTV.prototype.mouseMove_ = function(evt) {
       null];
   var startTime = ((this.mouseOverX - 1) / scale[0]) + translation[0];
   var endTime = ((this.mouseOverX + 1) / scale[0]) + translation[0];
+  var minX = this.width();
+  var maxX = 0;
   for (var s = 0; s < this.ts_sets.length; ++s) {
     var ts_set = this.ts_sets[s];
 
@@ -111,17 +130,32 @@ FTV.prototype.mouseMove_ = function(evt) {
       var ts = ts_set.timeseries(t);
       // TODO: other visual properties
       var pointIter = ts.getPointIterator(startTime, endTime);
-      if (!pointIter.done() && pointIter.valid()) {
-        var x = (pointIter.time() - translation[0]) * scale[0];
-        var y = (pointIter.value() - translation[1]) * scale[1];
-        this.ctx.strokeStyle = ts.getColor();
-        this.ctx.fillStyle = ts.getColor();
-        this.ctx.beginPath();
-        this.ctx.arc(x, y, 2, 0, Math.PI * 2, true);
-        this.ctx.fill();
+      if (!pointIter.done()) {
+        pointIter.handleTimeHighlight();
+        if (pointIter.valid()) {
+          var x = (pointIter.time() - translation[0]) * scale[0];
+          if (x > maxX)
+            maxX = x;
+          if (x < minX)
+            minX = x;
+          var y = (pointIter.value() - translation[1]) * scale[1];
+          ctx.strokeStyle = ts.getColor();
+          ctx.fillStyle = ts.getColor();
+          ctx.beginPath();
+          ctx.arc(x, y, 2, 0, Math.PI * 2, true);
+          ctx.fill();
+        }
       }
     }
   }
+
+  return [minX - 2, 0, 4 + maxX - minX, this.height()];
+};
+
+FTV.prototype.mouseMove_ = function(evt) {
+  var self = this;
+  self.mouseOverX = evt.offsetX;
+  this.replaceOverlay(function(ctx) { return self.drawPoints(ctx); });
 };
 
 ////////////////////////////////////////////////////////////////////////////////

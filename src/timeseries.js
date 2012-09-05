@@ -21,6 +21,7 @@ var Timeseries = function(name, timestamps, values) {
   this.timestamps = timestamps;
   this.values = values;
   this.color = "#000";
+  this.timeHighlightHandler = null;
 
   this.timeRange = [Number.MAX_VALUE, Number.MIN_VALUE];
   this.valueRange = [Number.MAX_VALUE, Number.MIN_VALUE];
@@ -66,13 +67,44 @@ Timeseries.prototype.getValueRange = function() {
 };
 
 Timeseries.prototype.render = function(ctx) {
+  this.renderWithOptions(ctx, {"lineWidth": 1});
+};
+
+Timeseries.prototype.highlight = function() {
+  var self = this;
+  var ftv = this.tsSet.ftv;
+  this.tsSet.ftv.replaceOverlay(function(ctx) {
+    self.renderWithOptions(ctx, {"lineWidth": 3});
+    // (dirty the entire canvas)
+    return null;
+  });
+};
+
+Timeseries.prototype.unhighlight = function() {
+  var self = this;
+  var ftv = this.tsSet.ftv;
+  this.tsSet.ftv.replaceOverlay(null);
+};
+
+Timeseries.prototype.setTimeHighlightHandler = function(fn) {
+  this.timeHighlightHandler = fn;
+};
+
+var getOpt_ = function(opts, name, def) {
+  if (name in opts) {
+    return opts[name];
+  } else {
+    return def;
+  }
+};
+
+Timeseries.prototype.renderWithOptions = function(ctx, opts) {
   // TODO: verify that this doesn't cost too much (the refetching and
   // recomputation). And think about alternatives.
-  var globalTimeRange = this.ts_set.ftv.getGlobalTimeRange();
-  var valueRange = this.ts_set.getValueRange();
-
+  var globalTimeRange = this.tsSet.ftv.getGlobalTimeRange();
+  var valueRange = this.tsSet.getValueRange();
   var scale = [
-      this.ts_set.ftv.width() / (globalTimeRange[1] - globalTimeRange[0]),
+      this.tsSet.ftv.width() / (globalTimeRange[1] - globalTimeRange[0]),
       // Note that these transform higher values to have lower y coordinates, as
       // an FTV user would expect.
       ftv.height() / (
@@ -83,6 +115,7 @@ Timeseries.prototype.render = function(ctx) {
 
   // TODO: other visual properties
   ctx.strokeStyle = this.getColor();
+  ctx.lineWidth = getOpt_(opts, "lineWidth", 1);
   ctx.beginPath();
   var lastPointValid = false;
   for (var pointIter = this.getPointIterator();
@@ -107,6 +140,7 @@ Timeseries.prototype.render = function(ctx) {
 var TimeseriesPointIterator = function(ts, startTime, endTime) {
   this.timestamps = ts.timestamps;
   this.values = ts.values;
+  this.ts = ts;
   this.startTime = startTime;
   this.endTime = endTime;
   this.pos = 0;
@@ -134,6 +168,17 @@ TimeseriesPointIterator.prototype.next = function() {
   ++this.pos;
 };
 
+TimeseriesPointIterator.prototype.handleTimeHighlight = function() {
+  if (this.ts.timeHighlightHandler) {
+    var val = this.values[this.pos];
+    if (isNaN(val)) {
+      this.ts.timeHighlightHandler(this.timestamps[this.pos], null);
+    } else {
+      this.ts.timeHighlightHandler(this.timestamps[this.pos], val);
+    }
+  }
+};
+
 TimeseriesPointIterator.prototype.done = function() {
   // FIXME: write an assert function and figure out imports.
   if (this.endTime == null) {
@@ -150,9 +195,9 @@ TimeseriesPointIterator.prototype.done = function() {
 
 var TimeseriesSet = function(timeseries_array, unit_name) {
   this.name = name;
-  this.ts_array = timeseries_array;
-  for (var i = 0; i < this.ts_array.length; ++i) {
-    this.ts_array[i].ts_set = this;
+  this.tsArray = timeseries_array;
+  for (var i = 0; i < this.tsArray.length; ++i) {
+    this.tsArray[i].tsSet = this;
   }
   this.computeRanges_();
   // TODO: add a setter for this, maybe?
@@ -160,30 +205,30 @@ var TimeseriesSet = function(timeseries_array, unit_name) {
 };
 
 TimeseriesSet.prototype.size = function() {
-  return this.ts_array.length;
+  return this.tsArray.length;
 };
 
 TimeseriesSet.prototype.timeseries = function(i) {
-  return this.ts_array[i];
+  return this.tsArray[i];
 };
 
 /** @private */
 TimeseriesSet.prototype.computeRanges_ = function() {
   this.timeRange = [Number.MAX_VALUE, Number.MIN_VALUE];
   this.valueRange = [Number.MAX_VALUE, Number.MIN_VALUE];
-  for (var i = 0; i < this.ts_array.length; ++i) {
+  for (var i = 0; i < this.tsArray.length; ++i) {
     // compute aggregate timeRange.
-    if (this.ts_array[i].getTimeRange()[0] < this.timeRange[0])
-      this.timeRange[0] = this.ts_array[i].getTimeRange()[0];
-    if (this.ts_array[i].getTimeRange()[1] > this.timeRange[1])
-      this.timeRange[1] = this.ts_array[i].getTimeRange()[1];
+    if (this.tsArray[i].getTimeRange()[0] < this.timeRange[0])
+      this.timeRange[0] = this.tsArray[i].getTimeRange()[0];
+    if (this.tsArray[i].getTimeRange()[1] > this.timeRange[1])
+      this.timeRange[1] = this.tsArray[i].getTimeRange()[1];
 
     // compute aggregate valueRange.
-    if (this.ts_array[i].getValueRange()[0] != null) {
-      if (this.ts_array[i].getValueRange()[0] < this.valueRange[0])
-        this.valueRange[0] = this.ts_array[i].getValueRange()[0];
-      if (this.ts_array[i].getValueRange()[1] > this.valueRange[1])
-        this.valueRange[1] = this.ts_array[i].getValueRange()[1];
+    if (this.tsArray[i].getValueRange()[0] != null) {
+      if (this.tsArray[i].getValueRange()[0] < this.valueRange[0])
+        this.valueRange[0] = this.tsArray[i].getValueRange()[0];
+      if (this.tsArray[i].getValueRange()[1] > this.valueRange[1])
+        this.valueRange[1] = this.tsArray[i].getValueRange()[1];
     }
   }
 };
