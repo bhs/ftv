@@ -25,11 +25,11 @@
       var createTimeHighlightHandler_ = function(div) {
         return function(time, value) {
           if (time == null)
-            div.timeSpan.innerHTML = "&mdash;";
+            div.timeSpan.innerHTML = "&empty;";
           else
             div.timeSpan.innerHTML = (new Date(time)).toLocaleTimeString();
           if (value == null)
-            div.valueSpan.innerHTML = "&mdash;";
+            div.valueSpan.innerHTML = "&empty;";
           else
             div.valueSpan.innerHTML = Math.round(100 * value) / 100;
         };
