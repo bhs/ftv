@@ -8,42 +8,72 @@
   <body>
     <div style="font-size: xx-large;">
       All series have 400 points. The following graphs have 5, 50, and
-      1000 series respectively.
+      1000 series respectively. We don't issue table callbacks for all 1000
+      timeseries in the final graph; the graph draws quickly, but it takes too
+      long to render the text in the divs outside of the canvas.
     </div>
+    <div>&nbsp;</div>
     <hr/>
     <div id="c0"></div>
+    <div>&nbsp;</div>
     <hr/>
     <div id="c1"></div>
+    <div>&nbsp;</div>
     <hr/>
     <div id="c2"></div>
     <script type="text/javascript">
       var createTimeHighlightHandler_ = function(div) {
         return function(time, value) {
-          var html = (
-              "<span style='" +
-              "font-family: \"courier\"; " +
-              "font-size: small; " +
-              "color: " + div.ts.getColor() + "; " +
-              "'>" +
-              "<span style='float: left; width: 80px;'>" +
-              div.ts.name + "</span>");
           if (time == null)
-            var t = "&mdash;";
+            div.timeSpan.innerHTML = "&mdash;";
           else
-            var t = (new Date(time)).toLocaleTimeString();
+            div.timeSpan.innerHTML = (new Date(time)).toLocaleTimeString();
           if (value == null)
-            var v = "&mdash;";
+            div.valueSpan.innerHTML = "&mdash;";
           else
-            var v = Math.round(100 * value) / 100;
-          html += (
-              "<span style='float: left; width: 160px;'>" + t + "</span>" +
-              "<span>" + v + "</span></span>");
-          div.innerHTML = html;
+            div.valueSpan.innerHTML = Math.round(100 * value) / 100;
         };
+      };
+
+      var createLegendRow_ = function(parentDiv, color, name) {
+        rowSpan = document.createElement("span");
+        rowSpan.style.fontFamily = "courier";
+        rowSpan.style.fontSize = "small";
+        rowSpan.style.color = color;
+
+        rowName = document.createElement("span");
+        rowName.style.float = "left";
+        rowName.style.width = "80px";
+        rowName.innerHTML = name;
+        rowSpan.appendChild(rowName);
+
+        rowTime = document.createElement("span");
+        rowTime.style.float = "left";
+        rowTime.style.width = "160px";
+        rowSpan.appendChild(rowTime);
+
+        rowValue = document.createElement("span");
+        rowSpan.appendChild(rowValue);
+
+        parentDiv.timeSpan = rowTime;
+        parentDiv.valueSpan = rowValue;
+        parentDiv.appendChild(rowSpan);
       };
 
       var createGraph = function(divId, numSeries, numPoints) {
         var container = document.getElementById(divId);
+
+        var graphDiv = document.createElement("div");
+        graphDiv.style.float = "left";
+        graphDiv.id = container.id + "_graph";
+        container.appendChild(graphDiv);
+
+        var tableDiv = document.createElement("div");
+        tableDiv.style.height = "500px";
+        tableDiv.style.float = "none";
+        tableDiv.style.overflowY = "scroll";
+        container.appendChild(tableDiv);
+
         var now = (new Date()).getTime();
         var tsArray = [];
         for (var t = 0; t < numSeries; ++t) {
@@ -77,13 +107,16 @@
               this.ts.unhighlight();
               this.style['font-weight'] = 'normal';
             };
+
+            createLegendRow_(seriesDiv, ts.getColor(), ts.name);
+
             var handler = createTimeHighlightHandler_(seriesDiv);
             handler(null, null);
             ts.setTimeHighlightHandler(handler);
-            container.appendChild(seriesDiv);
+            tableDiv.appendChild(seriesDiv);
           }
         }
-        ftv = new FTV(divId);
+        ftv = new FTV(divId + "_graph");
         ftv.addTimeseriesSet(new TimeseriesSet(tsArray, "unitless"));
         ftv.start();
       }
