@@ -1,26 +1,20 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>A Trivial Example</title>
-    <script type="text/javascript" src="../src/ftv.js"></script>
-    <script type="text/javascript" src="../src/timeseries.js"></script>
+    <title>Remote graphs</title>
+    <script type="text/javascript" src="ftv.js"></script>
+    <script type="text/javascript" src="timeseries.js"></script>
+    <script type="text/javascript" src="wire_format.js"></script>
   </head>
   <body>
     <div style="font-size: xx-large;">
-      All series have 400 points. The following graphs have 5, 50, and
-      1000 series respectively. We don't issue table callbacks for all 1000
-      timeseries in the final graph; the graph draws quickly, but it takes too
-      long to render the text in the divs outside of the canvas.
+      TODO: add stats at top.
     </div>
     <div>&nbsp;</div>
     <hr/>
-    <div id="c0"></div>
-    <div>&nbsp;</div>
-    <hr/>
-    <div id="c1"></div>
-    <div>&nbsp;</div>
-    <hr/>
-    <div id="c2"></div>
+
+    <div id="all_graphs"></div>
+
     <script type="text/javascript">
       var createTimeHighlightHandler_ = function(div) {
         return function(time, value) {
@@ -60,42 +54,29 @@
         parentDiv.appendChild(rowSpan);
       };
 
-      var createGraph = function(divId, numSeries, numPoints) {
-        var container = document.getElementById(divId);
+      var createGraph = function(divId, tsArray) {
+        var allGraphs = document.getElementById("all_graphs");
 
+        var container = document.createElement("div");
+        container.style.float = "left";
+        container.id = divId;
         var graphDiv = document.createElement("div");
         graphDiv.style.float = "left";
         graphDiv.id = container.id + "_graph";
         container.appendChild(graphDiv);
 
         var tableDiv = document.createElement("div");
-        tableDiv.style.height = "500px";
+        tableDiv.style.height = "300px";
         tableDiv.style.float = "none";
         tableDiv.style.overflowY = "scroll";
         container.appendChild(tableDiv);
 
-        var now = (new Date()).getTime();
-        var tsArray = [];
-        for (var t = 0; t < numSeries; ++t) {
-          var timestamps = new Float64Array(numPoints);
-          var values = new Float64Array(numPoints);
-          var gappiness = 50 * Math.random();
-          var gapPhase = 200 * Math.random();
-          for (var p = 0; p <= numPoints; p += 1) {
-            timestamps[p] = now + (p * 1000);
-            if ((p + gapPhase) % 100 < gappiness) {
-              values[p] = NaN;
-            } else {
-              values[p] = Math.sin((p + t * 200 / numSeries)
-                                   * Math.PI * 2 / numPoints);
-            }
-          }
-          ts = new Timeseries("s" + t, timestamps, values);
+        for (var t = 0; t < tsArray.length; ++t) {
+          ts = tsArray[t];
           ts.setColor("rgb(" +
                       Math.floor(Math.random() * 192) + ", " +
                       Math.floor(Math.random() * 192) + ", " +
                       Math.floor(Math.random() * 192) + ")");
-          tsArray[tsArray.length] = ts;
           var seriesDiv = document.createElement("div");
           seriesDiv.ts = ts;
           seriesDiv.onmouseover = function() {
@@ -115,14 +96,24 @@
             ts.setTimeHighlightHandler(handler);
           tableDiv.appendChild(seriesDiv);
         }
+        allGraphs.appendChild(container);
         ftv = new FTV(divId + "_graph");
         ftv.addTimeseriesSet(new TimeseriesSet(tsArray, "unitless"));
         ftv.start();
+        allGraphs.appendChild(document.createElement("p"));
+      }
+      var count_ = 0;
+
+      var printRes_ = function(res) {
+        createGraph("g" + count_, res);
+        count_++;
+      };
+      for (var c = 0; c < 100; ++c) {
+        LoadRemoteTimeseriesSet(
+            "http://bhs-dev.i.corp.google.com:10000/ftv?num_series=50",
+            printRes_);
       }
 
-      createGraph("c0", 5, 400);
-      createGraph("c1", 50, 400);
-      createGraph("c2", 1000, 400);
     </script>
   </body>
 </html>

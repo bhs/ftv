@@ -10,8 +10,8 @@ var FTV = function(div_name) {
   this.ts_sets = [];
   this.div = document.getElementById(div_name);
   this.canvas = document.createElement("canvas");
-  this.canvas.width = 900;
-  this.canvas.height = 500;
+  this.canvas.width = 600;
+  this.canvas.height = 300;
   this.div.appendChild(document.createElement("p"));
   this.div.appendChild(this.canvas);
   this.ctx = this.canvas.getContext("2d");

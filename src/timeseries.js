@@ -170,12 +170,9 @@ TimeseriesPointIterator.prototype.next = function() {
 
 TimeseriesPointIterator.prototype.handleTimeHighlight = function() {
   if (this.ts.timeHighlightHandler) {
-    var val = this.values[this.pos];
-    if (isNaN(val)) {
-      this.ts.timeHighlightHandler(this.timestamps[this.pos], null);
-    } else {
-      this.ts.timeHighlightHandler(this.timestamps[this.pos], val);
-    }
+    // TODO: why is isNaN so expensive?
+    this.ts.timeHighlightHandler(
+        this.timestamps[this.pos], this.values[this.pos]);
   }
 };
 

@@ -1,26 +1,20 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>A Trivial Example</title>
+    <title>Many local graphs</title>
     <script type="text/javascript" src="../src/ftv.js"></script>
     <script type="text/javascript" src="../src/timeseries.js"></script>
   </head>
   <body>
     <div style="font-size: xx-large;">
-      All series have 400 points. The following graphs have 5, 50, and
-      1000 series respectively. We don't issue table callbacks for all 1000
-      timeseries in the final graph; the graph draws quickly, but it takes too
-      long to render the text in the divs outside of the canvas.
+      All series have 400 points. There are 100 graphs on this page, each with
+      50 timeseries.
     </div>
     <div>&nbsp;</div>
     <hr/>
-    <div id="c0"></div>
-    <div>&nbsp;</div>
-    <hr/>
-    <div id="c1"></div>
-    <div>&nbsp;</div>
-    <hr/>
-    <div id="c2"></div>
+
+    <div id="all_graphs"></div>
+
     <script type="text/javascript">
       var createTimeHighlightHandler_ = function(div) {
         return function(time, value) {
@@ -61,15 +55,18 @@
       };
 
       var createGraph = function(divId, numSeries, numPoints) {
-        var container = document.getElementById(divId);
+        var allGraphs = document.getElementById("all_graphs");
 
+        var container = document.createElement("div");
+        container.style.float = "left";
+        container.id = divId;
         var graphDiv = document.createElement("div");
         graphDiv.style.float = "left";
         graphDiv.id = container.id + "_graph";
         container.appendChild(graphDiv);
 
         var tableDiv = document.createElement("div");
-        tableDiv.style.height = "500px";
+        tableDiv.style.height = "300px";
         tableDiv.style.float = "none";
         tableDiv.style.overflowY = "scroll";
         container.appendChild(tableDiv);
@@ -115,14 +112,16 @@
             ts.setTimeHighlightHandler(handler);
           tableDiv.appendChild(seriesDiv);
         }
+        allGraphs.appendChild(container);
         ftv = new FTV(divId + "_graph");
         ftv.addTimeseriesSet(new TimeseriesSet(tsArray, "unitless"));
         ftv.start();
+        allGraphs.appendChild(document.createElement("p"));
       }
 
-      createGraph("c0", 5, 400);
-      createGraph("c1", 50, 400);
-      createGraph("c2", 1000, 400);
+      for (var g = 0; g < 100; ++g) {
+        createGraph("g" + g, 50, 400);
+      }
     </script>
   </body>
 </html>
