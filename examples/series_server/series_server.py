@@ -58,7 +58,9 @@ class FTVHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       s.send_response(200)
       s.send_header('Content-type', 'application/octet-stream')
       s.end_headers()
-      s.wfile.write(GetResponseForParams(num_series, num_points, percent_missing))
+      payload = GetResponseForParams(num_series, num_points, percent_missing)
+      print "About to return %d bytes." % len(payload)
+      s.wfile.write(payload)
     elif path == "/":
       s.send_response(200)
       s.send_header('Content-type', 'text/html')
