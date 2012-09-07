@@ -14,6 +14,7 @@ The encoding format is as described in the FTV documentation.
 
 import BaseHTTPServer
 import math
+import random
 import struct
 import time
 import urlparse
@@ -24,7 +25,6 @@ response_value_cache = {}
 
 def GetResponseForParams(num_series, num_points, percent_missing):
   key = (num_series, num_points, percent_missing)
-  print key
   if key not in response_value_cache:
     components = []
     header = struct.pack('<L', num_points)
@@ -33,8 +33,12 @@ def GetResponseForParams(num_series, num_points, percent_missing):
         struct.pack('<d', now_ms - (num_points - t) * 100)
         for t in xrange(num_points)])
     for i in xrange(num_series):
+      gap_phase = random.random() * num_points;
       value_data = ''.join([
-          struct.pack('<d', math.sin(math.pi * 2 * (i * 2 + v) / num_points))
+          struct.pack('<d',
+              math.sin(math.pi * 2 * (i * 2 + v) / num_points)
+                  if (((v + gap_phase) % 100) > percent_missing)
+                  else float('nan'))
           for v in xrange(num_points)])
       components.extend([header, header, time_data, value_data])
     response_value_cache[key] = ''.join(components)
@@ -49,7 +53,7 @@ class FTVHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     if path == "/ftv":
       num_series = int(params.setdefault('num_series', [1])[0])
       num_points = int(params.setdefault('num_points', [500])[0])
-      percent_missing = float(params.setdefault('percent_missing', [0])[0])
+      percent_missing = float(params.setdefault('percent_missing', [20])[0])
 
       s.send_response(200)
       s.send_header('Content-type', 'application/octet-stream')

@@ -123,13 +123,14 @@
         if (count_ == NUM_GRAPHS) {
           statsDiv = document.getElementById("stats");
           statsDiv.innerHTML = (
-              "Remotely loaded and rendered " + NUM_GRAPHS + " graphs with " + NUM_SERIES + " series each. " +
+              "Remotely loaded and rendered " + NUM_GRAPHS + " graphs with between " + NUM_SERIES + " and " +
+              (NUM_SERIES + NUM_GRAPHS) + " timeseries each. " +
               "Took " + ((timeMillis() - startTime) / 1000) + " seconds.");
         }
       };
       for (var c = 0; c < NUM_GRAPHS; ++c) {
         LoadRemoteTimeseriesSet(
-            "/ftv?num_series=" + NUM_SERIES,
+            "/ftv?num_series=" + (NUM_SERIES + c),
             handleTSArray_);
       }
     </script>
