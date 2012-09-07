@@ -19,6 +19,28 @@ import time
 import urlparse
 
 
+response_value_cache = {}
+
+
+def GetResponseForParams(num_series, num_points, percent_missing):
+  key = (num_series, num_points, percent_missing)
+  print key
+  if key not in response_value_cache:
+    components = []
+    header = struct.pack('<L', num_points)
+    now_ms = int(time.time() * 1000)
+    time_data = ''.join([
+        struct.pack('<d', now_ms - (num_points - t) * 100)
+        for t in xrange(num_points)])
+    for i in xrange(num_series):
+      value_data = ''.join([
+          struct.pack('<d', math.sin(math.pi * 2 * (i * 2 + v) / num_points))
+          for v in xrange(num_points)])
+      components.extend([header, header, time_data, value_data])
+    response_value_cache[key] = ''.join(components)
+  return response_value_cache[key]
+
+
 class FTVHandler(BaseHTTPServer.BaseHTTPRequestHandler):
   def do_GET(s):
     parsed_url = urlparse.urlparse(s.path)
@@ -32,15 +54,7 @@ class FTVHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       s.send_response(200)
       s.send_header('Content-type', 'application/octet-stream')
       s.end_headers()
-      now_ms = int(time.time() * 1000)
-      for i in xrange(num_series):
-        s.wfile.write(struct.pack('<L', num_points))
-        s.wfile.write(struct.pack('<L', num_points))
-        for t in xrange(num_points):
-          s.wfile.write(struct.pack('<d', now_ms - (num_points - t) * 100))
-        for v in [math.sin(math.pi * 2 * (i * 2 + j) / num_points)
-                  for j in xrange(num_points)]:
-          s.wfile.write(struct.pack('<d', v))
+      s.wfile.write(GetResponseForParams(num_series, num_points, percent_missing))
     elif path == "/":
       s.send_response(200)
       s.send_header('Content-type', 'text/html')

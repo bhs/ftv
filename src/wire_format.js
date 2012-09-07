@@ -3,7 +3,6 @@
  */
 
 var LoadRemoteTimeseriesSet = function(url, cb) {
-  console.log("hmm");
   var req = new XMLHttpRequest();
   req.open("GET", url, true);
   req.responseType = "arraybuffer";
@@ -22,7 +21,6 @@ var LoadRemoteTimeseriesSet = function(url, cb) {
 var DecodeTimeseriesSet = function(arrayBuffer) {
   var pos = 0;
   var rval = [];
-  console.log("BHS: ", arrayBuffer.byteLength);
   while (pos < arrayBuffer.byteLength) {
     var dataView = new DataView(arrayBuffer);
     var tsLen = dataView.getUint32(pos, true);

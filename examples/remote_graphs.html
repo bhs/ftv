@@ -7,8 +7,8 @@
     <script type="text/javascript" src="wire_format.js"></script>
   </head>
   <body>
-    <div style="font-size: xx-large;">
-      TODO: add stats at top.
+    <div id="stats" style="font-size: xx-large;">
+      (Loading, please wait...)
     </div>
     <div>&nbsp;</div>
     <hr/>
@@ -29,8 +29,14 @@
         };
       };
 
+      var timeMillis = function() {
+        return (new Date()).getTime();
+      };
+
       var createLegendRow_ = function(parentDiv, color, name) {
         rowSpan = document.createElement("span");
+        rowSpan.style.float = "left";
+        rowSpan.style.width = "480px";
         rowSpan.style.fontFamily = "courier";
         rowSpan.style.fontSize = "small";
         rowSpan.style.color = color;
@@ -47,6 +53,8 @@
         rowSpan.appendChild(rowTime);
 
         rowValue = document.createElement("span");
+        rowTime.style.float = "left";
+        rowValue.style.width = "160px";
         rowSpan.appendChild(rowValue);
 
         parentDiv.timeSpan = rowTime;
@@ -102,18 +110,28 @@
         ftv.start();
         allGraphs.appendChild(document.createElement("p"));
       }
-      var count_ = 0;
 
-      var printRes_ = function(res) {
+      var count_ = 0;
+      var NUM_GRAPHS = 50;
+      var NUM_SERIES = 25;
+
+      var startTime = timeMillis();
+
+      var handleTSArray_ = function(res) {
         createGraph("g" + count_, res);
         count_++;
+        if (count_ == NUM_GRAPHS) {
+          statsDiv = document.getElementById("stats");
+          statsDiv.innerHTML = (
+              "Remotely loaded and rendered " + NUM_GRAPHS + " graphs with " + NUM_SERIES + " series each. " +
+              "Took " + ((timeMillis() - startTime) / 1000) + " seconds.");
+        }
       };
-      for (var c = 0; c < 100; ++c) {
+      for (var c = 0; c < NUM_GRAPHS; ++c) {
         LoadRemoteTimeseriesSet(
-            "http://bhs-dev.i.corp.google.com:10000/ftv?num_series=50",
-            printRes_);
+            "/ftv?num_series=" + NUM_SERIES,
+            handleTSArray_);
       }
-
     </script>
   </body>
 </html>
