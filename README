@@ -1,3 +1,25 @@
 Copyright 2012, Ben Sigelman (bhs@gmail.com)
+MIT-licensed (http://opensource.org/licenses/MIT)
 
 'ftv' is the Fast Timeseries Visualizer.
+
+In its current form, ftv is a proof-of-concept. Many necessary features are
+missing, but what's present demonstrates how fast client-side timeseries
+visualization can be in a modern browser. The following techniques help to keep
+ftv speedy:
+ - The bulk of the data (the timestamps and points themselves) are never copied
+   within the javascript layer. When loading data from a server (like the
+   demonstration server, written in python), this means that the data comes
+   back in a specific binary format that's friendly for the javascript DataView
+   API. The javascript layer then establishes pointers into that data
+   structure, rather than copying it or, worse still, parsing an analogous JSON
+   representation.
+ - The HTML5 Canvas calling patterns are friendly to hardware acceleration
+   (though there's still more work that could be done).
+ - Interactive updates to the canvas do not require a full redraw of the
+   "background", nor do they require an additional transparent canvas overlay;
+   this seems to be the more efficient approach in the implementations tried so
+   far.
+ - FTV doesn't have lots of features. It renders timeseries, but it does not do
+   statistical aggregations of those timeseries, et cetera. This, of course,
+   makes it easier to keep the implementation simple and efficient.

@@ -1,4 +1,8 @@
 /**
+ * @license
+ * Copyright 2012 Ben Sigelman (bhs@gmail.com)
+ * MIT-licensed (http://opensource.org/licenses/MIT)
+ *
  * @fileoverview The Timeseries object encapsulates state about the raw sequence
  * <timestamp, value> pairs, as well as identification and stylistic
  * information.

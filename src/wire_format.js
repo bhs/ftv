@@ -1,4 +1,8 @@
 /**
+ * @license
+ * Copyright 2012 Ben Sigelman (bhs@gmail.com)
+ * MIT-licensed (http://opensource.org/licenses/MIT)
+ *
  * @fileoverview Decode the FTV TimeseriesSet wire format.
  */
 
