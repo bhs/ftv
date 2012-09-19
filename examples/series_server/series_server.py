@@ -50,7 +50,22 @@ class FTVHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     parsed_url = urlparse.urlparse(s.path)
     path, params = (parsed_url.path, urlparse.parse_qs(parsed_url.query))
 
-    if path == "/ftv":
+    static_resources = {
+      '/': 'examples/remote_graphs.html',
+      '/ftv.js': 'src/ftv.js',
+      '/timeseries.js': 'src/timeseries.js',
+      '/wire_format.js': 'src/wire_format.js'
+    }
+
+    if path in static_resources.keys():
+      file = static_resources[path]
+      s.send_response(200)
+      content_type = 'text/javascript' if path.endswith('.js') else 'text/html'
+      s.send_header('Content-type', content_type)
+      s.end_headers()
+      with open(file) as f:
+        s.wfile.write(f.read())
+    elif path == '/ftv':
       num_series = int(params.setdefault('num_series', [1])[0])
       num_points = int(params.setdefault('num_points', [500])[0])
       percent_missing = float(params.setdefault('percent_missing', [20])[0])
@@ -59,39 +74,9 @@ class FTVHandler(BaseHTTPServer.BaseHTTPRequestHandler):
       s.send_header('Content-type', 'application/octet-stream')
       s.end_headers()
       payload = GetResponseForParams(num_series, num_points, percent_missing)
-      print "About to return %d bytes." % len(payload)
       s.wfile.write(payload)
-    elif path == "/":
-      s.send_response(200)
-      s.send_header('Content-type', 'text/html')
-      s.end_headers()
-      with open("examples/remote_graphs.html") as f:
-        s.wfile.write(f.read())
-    elif path == "/ftv.js":
-      s.send_response(200)
-      s.send_header('Content-type', 'text/javascript')
-      s.end_headers()
-      with open("src/ftv.js") as f:
-        s.wfile.write(f.read())
-    elif path == "/timeseries.js":
-      s.send_response(200)
-      s.send_header('Content-type', 'text/javascript')
-      s.end_headers()
-      with open("src/timeseries.js") as f:
-        s.wfile.write(f.read())
-    elif path == "/wire_format.js":
-      s.send_response(200)
-      s.send_header('Content-type', 'text/javascript')
-      s.end_headers()
-      with open("src/wire_format.js") as f:
-        s.wfile.write(f.read())
     else:
-      s.send_response(404)
-      s.send_header('Content-type', 'text/html')
-      s.end_headers()
-      s.wfile.write('Try "/" instead.')
-      return
-
+      s.send_error(404, 'Try "/" instead.')
 
 
 if __name__ == '__main__':
@@ -101,4 +86,3 @@ if __name__ == '__main__':
   except KeyboardInterrupt:
     pass
   httpd.server_close()
-  print "(done)"
